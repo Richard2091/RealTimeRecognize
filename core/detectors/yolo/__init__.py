@@ -1,6 +1,7 @@
 """
 YOLO检测器系列
+注意：实际实现位于detectors目录下
 """
-from .yolo8 import YOLOv8Detector
-from .yolo26 import YOLO26Detector
-from .yolo_world import YOWorldDetector
+from detectors.yolo8_detector import YOLOv8Detector
+from detectors.yolo26_detector import YOLO26Detector
+from detectors.yolo_world_detector import YOWorldDetector

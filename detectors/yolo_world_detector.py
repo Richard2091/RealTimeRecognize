@@ -79,6 +79,10 @@ class YOWorldDetector:
         self.classes = classes
         self.model.set_classes(classes)
         print(f"✓ 更新检测类别: {', '.join(classes)}")
+    
+    def get_classes(self):
+        """获取支持的类别"""
+        return self.classes
 
     def get_info(self):
         """获取检测器信息"""

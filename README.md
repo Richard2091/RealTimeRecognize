@@ -7,6 +7,7 @@
 - 🎯 **多模型支持**: YOLOv8、YOLO26、YOLO-World
 - 🤸 **姿态检测**: 基于MediaPipe的人体姿态识别
 - 😊 **表情分析**: 基于MediaPipe的面部表情检测
+- 📹 **RTSP摄像头**: 支持通过RTSP协议连接网络摄像头
 - 🖼️ **实时显示**: 高性能的视频流处理
 - 🎨 **图形化界面**: PyQt5实现，完美支持中文
 
@@ -29,45 +30,113 @@ pip install -r requirements.txt
 ### 运行程序
 
 ```bash
-# 运行QT版本（推荐，支持中文）
-python main_qt.py
-
-# 运行OpenCV版本
+# 运行QT版本
 python main.py
 ```
 
 ## 📁 项目结构
 
 ```
-opencv&yolo/
-├── core/                      # 核心功能模块
-│   ├── detectors/             # 所有检测器
-│   │   ├── base.py          # 基础检测器抽象类
-│   │   ├── yolo/           # YOLO系列检测器
-│   │   ├── pose/           # 姿态检测
-│   │   └── emotion/       # 表情检测
-│   ├── display/              # 显示渲染
-│   │   └── renderers/     # 渲染器
-│   └── pipeline/           # 检测流水线
+RealTimeRecognize/
+├── main.py                 # 主程序入口
+├── requirements.txt        # 依赖包列表
+├── README.md              # 项目说明文档
 │
-├── ui/                       # QT用户界面
-│   └── qt_main.py           # PyQt5主窗口
+├── camera/                # 摄像头控制模块
+│   ├── __init__.py
+│   ├── camera_controller.py      # 本地摄像头控制器
+│   └── rtsp_camera_controller.py # RTSP网络摄像头控制器
 │
-├── camera/                  # 摄像头控制
-│   └── camera_controller.py
+├── core/                  # 核心功能模块
+│   ├── __init__.py
+│   ├── detectors/         # 检测器模块
+│   │   ├── __init__.py
+│   │   ├── base.py        # 基础检测器抽象类
+│   │   ├── mediapipe/     # MediaPipe相关检测器（预留）
+│   │   └── yolo/          # YOLO相关检测器（预留）
+│   ├── display/           # 显示渲染模块
+│   │   ├── __init__.py
+│   │   └── renderers/     # 渲染器（预留）
+│   └── pipeline/          # 检测流水线
+│       ├── __init__.py
+│       └── detection_pipeline.py # 检测流水线实现
 │
-├── utils/                   # 工具模块
-│   └── config.py          # 配置管理
+├── detectors/             # 实际的检测器实现
+│   ├── __init__.py
+│   ├── yolo8_detector.py      # YOLOv8检测器
+│   ├── yolo26_detector.py     # YOLO26检测器
+│   └── yolo_world_detector.py # YOLO-World检测器
 │
-├── main.py                 # OpenCV版本主入口
-├── main_qt.py            # QT版本主入口（推荐）
-└── model/                 # 模型文件
-    ├── yolo8/
-    ├── yolo26/
-    └── yoloworld/
+├── model/                 # 模型文件
+│   ├── yolo8/            # YOLOv8模型
+│   │   ├── yolov8n.pt
+│   │   ├── yolov8n-pose.pt
+│   │   └── yolov8s.pt
+│   ├── yolo26/           # YOLO26模型
+│   │   ├── yolo26n.pt
+│   │   ├── yolo26n-pose.pt
+│   │   └── yolo26s.pt
+│   └── yoloworld/        # YOLO-World模型
+│       └── yolov8s-worldv2.pt
+│
+├── ui/                   # PyQt5用户界面
+│   ├── __init__.py
+│   ├── main_window.py            # 主窗口
+│   ├── components/               # UI组件
+│   │   ├── __init__.py
+│   │   ├── control_panel.py      # 控制面板
+│   │   └── display_area.py       # 显示区域
+│   ├── handlers/                 # 功能处理器
+│   │   ├── __init__.py
+│   │   ├── camera_handler.py     # 摄像头处理器
+│   │   └── detection_handler.py  # 检测处理器
+│   └── threads/                  # 线程模块
+│       ├── __init__.py
+│       └── rtsp_thread.py        # RTSP线程
+│
+└── utils/                # 工具模块
+    ├── __init__.py
+    └── config.py         # 配置管理
 ```
 
 ## 💡 使用示例
+
+### 使用RTSP网络摄像头
+
+**通过GUI使用**:
+1. 启动程序: `python main_qt.py`
+2. 在左侧"摄像头设置"中选择"RTSP网络摄像头"
+3. 输入IP地址（例如: 192.168.1.100 或 192.168.1.100:554）
+   - 只需输入IP，无需输入"rtsp://"前缀
+   - 默认端口为8554，如需其他端口可在IP后添加（如: 192.168.1.100:554）
+4. 点击"启动检测"
+
+**编程使用**:
+
+```python
+from camera.rtsp_camera_controller import RTSPCameraController
+
+# 连接RTSP摄像头
+camera = RTSPCameraController(
+  rtsp_url='rtsp://192.168.1.100:8554/',
+  width=1280,
+  height=720
+)
+
+ret, frame = camera.read()
+camera.release()
+```
+
+**常见RTSP地址格式**:
+- 默认格式（本程序）: `rtsp://ip:8554/`
+- 海康威视: `rtsp://username:password@ip:554/Streaming/Channels/101`
+- 大华: `rtsp://username:password@ip:554/cam/realmonitor?channel=1&subtype=0`
+- 其他通用格式: `rtsp://ip:port/stream`
+
+**注意事项**:
+- 确保设备和电脑在同一网络
+- 检查防火墙设置
+- 验证RTSP端口是否开放（常见端口: 554, 8554）
 
 ### 编程使用
 
@@ -156,6 +225,15 @@ class MyDetector(BaseDetector):
 ### MediaPipe导入失败
 - **问题**: MediaPipe版本不兼容
 - **解决**: 重新安装 `pip install mediapipe==0.10.9`
+
+### RTSP无法连接
+- **问题**: 无法连接到RTSP流
+- **解决**:
+  1. 检查RTSP地址是否正确
+  2. 确保设备和电脑在同一网络
+  3. 检查防火墙设置
+  4. 验证RTSP端口是否开放（常见端口: 554, 8554）
+  5. 使用FFmpeg测试: `ffplay rtsp://ip:port/stream`
 
 ## 🤝 贡献
 

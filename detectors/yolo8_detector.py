@@ -55,6 +55,10 @@ class YOLOv8Detector:
         """
         results = self.model(frame, verbose=verbose, classes=[0])
         return results
+    
+    def get_classes(self):
+        """获取支持的类别"""
+        return self.model.names if hasattr(self.model, 'names') else {}
 
     def get_info(self):
         """获取检测器信息"""
