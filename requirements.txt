@@ -1,0 +1,8 @@
+# YOLO + OpenCV + PyQt5 实时识别项目依赖
+opencv-python>=4.8.0
+ultralytics>=8.2.0
+numpy>=1.24.0
+torch>=2.0.0
+torchvision>=0.15.0
+mediapipe>=0.10.9
+PyQt5>=5.15.0
