@@ -39,7 +39,7 @@ class CameraHandler:
             if not self.main_window.rtsp_url:
                 self.main_window.display_area.get_component('status_label').setText("状态: 请输入RTSP地址")
                 return
-            self._test_rtsp_connection()
+            # self._test_rtsp_connection()
 
     def handle_rtsp_url_change(self, text):
         """处理RTSP地址变化"""
