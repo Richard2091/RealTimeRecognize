@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/opencv&amp;yolo.iml" filepath="$PROJECT_DIR$/.idea/opencv&amp;yolo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/RealTimeRecognize.iml" filepath="$PROJECT_DIR$/.idea/RealTimeRecognize.iml" />
     </modules>
   </component>
 </project>
