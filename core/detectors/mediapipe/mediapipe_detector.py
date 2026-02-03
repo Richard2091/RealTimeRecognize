@@ -4,26 +4,27 @@ MediaPipe统一检测器模块
 """
 import cv2
 import mediapipe as mp
+mp_solutions = mp
 
 
 class MediaPipeDetector:
     """MediaPipe统一检测器"""
-    
+
     def __init__(self, model_path=None, detection_type="pose"):
         """
         初始化MediaPipe检测器
-        
+
         Args:
             model_path: 不需要模型路径（使用MediaPipe内置模型）
             detection_type: 检测类型（"pose"姿态检测，"face"表情检测）
         """
         self.detection_type = detection_type
         self.model_path = model_path
-        
+
         # MediaPipe组件
-        self.mp_pose = mp.solutions.pose
-        self.mp_face_mesh = mp.solutions.face_mesh
-        self.mp_draw = mp.solutions.drawing_utils
+        self.mp_pose = mp_solutions.pose
+        self.mp_face_mesh = mp_solutions.face_mesh
+        self.mp_draw = mp_solutions.drawing_utils
         
         # 检测器实例
         self.detector = None

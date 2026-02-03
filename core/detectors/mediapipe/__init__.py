@@ -4,6 +4,6 @@ MediaPipe检测器模块
 """
 
 from .mediapipe_detector import MediaPipeDetector
-from .mediapipe_manager import MediaPipeManager
+from .mediapipe_manager import MediaPipeRenderer, MediaPipeManager
 
-__all__ = ['MediaPipeDetector', 'MediaPipeManager']
+__all__ = ['MediaPipeDetector', 'MediaPipeRenderer', 'MediaPipeManager']

@@ -1,8 +1,14 @@
 # YOLO + OpenCV + PyQt5 实时识别项目依赖
-opencv-python>=4.8.0
-ultralytics>=8.2.0
-numpy>=1.24.0
-torch>=2.0.0
-torchvision>=0.15.0
-mediapipe>=0.10.9
-PyQt5>=5.15.0
+# PyTorch CPU 版本安装源
+--index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+
+# 恢复默认 PyPI 源安装其他包
+--index-url https://pypi.org/simple
+opencv-python==4.11.0.86
+ultralytics==8.4.9
+numpy==1.26.4
+mediapipe==0.10.32
+PyQt5==5.15.11

@@ -7,6 +7,9 @@ import os
 # 设置OpenCV日志级别，抑制不必要的警告
 os.environ['OPENCV_LOG_LEVEL'] = 'ERROR'
 os.environ['OPENCV_FFMPEG_LOG_LEVEL'] = 'ERROR'
+# PyTorch DLL 加载修复
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['MKL_THREADING_LAYER'] = 'GNU'
 
 # 导入QT界面
 from ui.main_window import main as ui_main
