@@ -2,7 +2,7 @@
 控制面板组件
 包含左侧控制面板的所有UI组件
 """
-from PyQt5.QtWidgets import (QFrame, QVBoxLayout, QGroupBox, QLabel, 
+from PyQt5.QtWidgets import (QFrame, QVBoxLayout, QGroupBox, QLabel,
                              QComboBox, QCheckBox, QPushButton, QHBoxLayout)
 from PyQt5.QtCore import Qt
 from utils.config import Config
@@ -10,27 +10,27 @@ from utils.config import Config
 
 class ControlPanel:
     """控制面板组件管理器"""
-    
+
     def __init__(self):
         self.panel = None
         self.components = {}
-        
+
     def create_panel(self):
         """创建完整的控制面板"""
         panel = QFrame()
         panel.setFrameShape(QFrame.StyledPanel)
         layout = QVBoxLayout()
-        
+
         # 添加各个组件
         layout.addWidget(self.create_model_selector())
         layout.addWidget(self.create_camera_selector())
         layout.addWidget(self.create_feature_selector())
         layout.addWidget(self.create_display_settings())
         layout.addWidget(self.create_control_buttons())
-        
+
         # 添加弹性空间
         layout.addStretch()
-        
+
         panel.setLayout(layout)
         self.panel = panel
         return panel
@@ -54,7 +54,7 @@ class ControlPanel:
     def create_camera_selector(self):
         """创建摄像头选择器组件"""
         from PyQt5.QtWidgets import QLineEdit
-        
+
         group = QGroupBox("摄像头设置")
         layout = QVBoxLayout()
 
@@ -65,13 +65,20 @@ class ControlPanel:
         camera_source_combo.addItem("RTSP网络摄像头", 'rtsp')
         layout.addWidget(camera_source_combo)
 
+        # 本地摄像头选择
+        local_camera_label = QLabel("选择本地摄像头:")
+        layout.addWidget(local_camera_label)
+
+        local_camera_combo = QComboBox()
+        layout.addWidget(local_camera_combo)
+
         # RTSP地址输入
         rtsp_label = QLabel("RTSP摄像头IP:")
         rtsp_label.setVisible(False)
         layout.addWidget(rtsp_label)
 
         rtsp_url_input = QLineEdit()
-        rtsp_url_input.setPlaceholderText("192.168.1.100 (默认端口8554)")
+        rtsp_url_input.setPlaceholderText("192.168.1.100 (默认端口554)")
         rtsp_url_input.setVisible(False)
         layout.addWidget(rtsp_url_input)
 
@@ -82,10 +89,12 @@ class ControlPanel:
         layout.addWidget(rtsp_hint_label)
 
         group.setLayout(layout)
-        
+
         # 保存组件引用
         self.components.update({
             'camera_source_combo': camera_source_combo,
+            'local_camera_label': local_camera_label,
+            'local_camera_combo': local_camera_combo,
             'rtsp_label': rtsp_label,
             'rtsp_url_input': rtsp_url_input,
             'rtsp_hint_label': rtsp_hint_label

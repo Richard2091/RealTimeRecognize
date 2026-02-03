@@ -17,16 +17,16 @@ class ConfigManager:
             # RTSP配置
             "rtsp_url": "",
             "camera_source": "local",  # 'local' 或 'rtsp'
-            
+
             # 检测功能开关
             "use_pose": False,
             "use_emotion": False,
             "show_skeleton": False,
             "mirror_mode": False,
-            
+
             # 模型选择
             "selected_model": None,
-            
+
             # 窗口设置
             "window_geometry": {
                 "x": 100,
@@ -34,15 +34,18 @@ class ConfigManager:
                 "width": 1400,
                 "height": 900
             },
-            
+
             # 摄像头设置
             "camera_settings": {
                 "width": 1280,
                 "height": 720
             },
-            
+
             # 统计信息显示
-            "show_statistics": True
+            "show_statistics": True,
+
+            # 分割器大小（上下区域高度，初始底部只显示标签栏30px）
+            "splitter_sizes": [600, 30],
         }
         
     def load_config(self):

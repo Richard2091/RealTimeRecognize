@@ -263,18 +263,44 @@ class CameraController(BaseCameraController):
 
     def open(self):
         """打开摄像头"""
-        self.cap = cv2.VideoCapture(self.camera_id)
+        import time
+        
+        print(f"  尝试打开摄像头ID: {self.camera_id}...")
+        self.cap = cv2.VideoCapture(self.camera_id, cv2.CAP_DSHOW)
         if not self.cap.isOpened():
-            raise RuntimeError(f"无法打开摄像头 {self.camera_id}")
+            # 尝试其他摄像头ID和模式
+            print(f"  ⚠ 无法使用摄像头ID {self.camera_id}，尝试其他ID...")
+            for cam_id in [0, 1, 2]:
+                print(f"  尝试摄像头ID: {cam_id}...")
+                self.cap = cv2.VideoCapture(cam_id, cv2.CAP_DSHOW)
+                if self.cap.isOpened():
+                    self.camera_id = cam_id
+                    print(f"  ✓ 成功打开摄像头ID: {cam_id}")
+                    break
+            else:
+                raise RuntimeError(f"无法打开摄像头，请检查摄像头是否被占用或需要权限")
+        else:
+            print(f"  ✓ cv2.VideoCapture打开成功")
 
-        # 设置分辨率
+        # 设置分辨率（但不强制，让摄像头使用默认分辨率）
+        # 某些摄像头不支持设置分辨率，设置后可能导致无法读取
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.initial_width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.initial_height)
+        
+        # 等待一下让设置生效
+        time.sleep(0.1)
 
         # 尝试启用硬件缩放
         self._try_enable_hardware_zoom()
+        
+        # 初始化统计信息
+        self.start_time = time.time()
+        self.frame_count = 0
+        self.frame_read_errors = 0
+        self.frame_times = []
+        self.fps_buffer = []
 
-        print(f"✓ 摄像头已打开 (分辨率: {self.get_actual_resolution()})")
+        print(f"✓ 摄像头已打开 (实际分辨率: {self.get_actual_resolution()})")
         if self.use_hardware_zoom:
             print(f"  硬件缩放: 支持")
         else:

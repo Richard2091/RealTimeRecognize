@@ -1,20 +1,25 @@
 {
   "rtsp_url": "192.168.1.4",
-  "camera_source": "rtsp",
+  "camera_source": "local",
   "use_pose": false,
   "use_emotion": false,
   "show_skeleton": false,
   "mirror_mode": false,
   "selected_model": "1",
   "window_geometry": {
-    "x": 399,
-    "y": 111,
-    "width": 1174,
-    "height": 819
+    "x": 510,
+    "y": 126,
+    "width": 1096,
+    "height": 824
   },
   "camera_settings": {
     "width": 1280,
     "height": 720
   },
-  "show_statistics": true
+  "show_statistics": true,
+  "splitter_sizes": [
+    524,
+    282
+  ],
+  "selected_camera_id": 0
 }

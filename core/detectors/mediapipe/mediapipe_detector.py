@@ -4,7 +4,18 @@ MediaPipe统一检测器模块
 """
 import cv2
 import mediapipe as mp
-mp_solutions = mp
+
+# 检查MediaPipe版本并导入正确的模块
+try:
+    # 新版本MediaPipe (>= 0.10.0)
+    from mediapipe.tasks import python
+    from mediapipe.tasks.python import vision
+    from mediapipe.tasks.python.vision import PoseLandmarker, FaceLandmarker
+    NEW_API = True
+except ImportError:
+    # 旧版本MediaPipe (< 0.10.0)
+    mp_solutions = mp
+    NEW_API = False
 
 
 class MediaPipeDetector:
@@ -21,10 +32,11 @@ class MediaPipeDetector:
         self.detection_type = detection_type
         self.model_path = model_path
 
-        # MediaPipe组件
-        self.mp_pose = mp_solutions.pose
-        self.mp_face_mesh = mp_solutions.face_mesh
-        self.mp_draw = mp_solutions.drawing_utils
+        # MediaPipe组件（仅在旧版本中初始化）
+        if not NEW_API:
+            self.mp_pose = mp_solutions.pose
+            self.mp_face_mesh = mp_solutions.face_mesh
+            self.mp_draw = mp_solutions.drawing_utils
         
         # 检测器实例
         self.detector = None
@@ -33,13 +45,64 @@ class MediaPipeDetector:
     def _init_mediapipe(self):
         """初始化MediaPipe检测器"""
         try:
+            if NEW_API:
+                # 新版本MediaPipe API - 检查模型文件是否存在
+                if self.detection_type == "pose":
+                    import os
+                    model_path = 'pose_landmarker_lite.task'
+                    if not os.path.exists(model_path):
+                        print(f"⚠ 模型文件 {model_path} 不存在，请下载或切换到旧版API")
+                        # 回退到旧API
+                        self._init_fallback()
+                        return
+                    base_options = python.BaseOptions(model_asset_path=model_path)
+                    options = vision.PoseLandmarkerOptions(
+                        base_options=base_options,
+                        output_segmentation_masks=False
+                    )
+                    self.detector = PoseLandmarker.create_from_options(options)
+                    print("✓ 初始化MediaPipe姿态检测器 (新API)")
+                elif self.detection_type == "face":
+                    import os
+                    model_path = 'face_landmarker.task'
+                    if not os.path.exists(model_path):
+                        print(f"⚠ 模型文件 {model_path} 不存在，请下载或切换到旧版API")
+                        # 回退到旧API
+                        self._init_fallback()
+                        return
+                    base_options = python.BaseOptions(model_asset_path=model_path)
+                    options = vision.FaceLandmarkerOptions(
+                        base_options=base_options,
+                        output_face_blendshapes=True,
+                        output_facial_transformation_matrixes=True,
+                        num_faces=5
+                    )
+                    self.detector = FaceLandmarker.create_from_options(options)
+                    print("✓ 初始化MediaPipe表情检测器 (新API)")
+            else:
+                # 旧版本MediaPipe API
+                self._init_fallback()
+        except Exception as e:
+            print(f"⚠ 新版本API初始化失败: {e}")
+            print("⚠ 尝试回退到旧版本API...")
+            self._init_fallback()
+    
+    def _init_fallback(self):
+        """回退到旧版本MediaPipe API"""
+        try:
+            # 确保旧API组件已初始化（处理从新版API回退的情况）
+            if not hasattr(self, 'mp_pose'):
+                self.mp_pose = mp_solutions.pose
+                self.mp_face_mesh = mp_solutions.face_mesh
+                self.mp_draw = mp_solutions.drawing_utils
+            
             if self.detection_type == "pose":
                 self.detector = self.mp_pose.Pose(
                     model_complexity=1,
                     min_detection_confidence=0.5,
                     min_tracking_confidence=0.5
                 )
-                print("✓ 初始化MediaPipe姿态检测器")
+                print("✓ 初始化MediaPipe姿态检测器 (旧API - 回退模式)")
             elif self.detection_type == "face":
                 self.detector = self.mp_face_mesh.FaceMesh(
                     max_num_faces=5,
@@ -47,9 +110,9 @@ class MediaPipeDetector:
                     min_detection_confidence=0.5,
                     min_tracking_confidence=0.5
                 )
-                print("✓ 初始化MediaPipe表情检测器")
+                print("✓ 初始化MediaPipe表情检测器 (旧API - 回退模式)")
         except Exception as e:
-            raise RuntimeError(f"MediaPipe初始化失败: {e}")
+            raise RuntimeError(f"MediaPipe初始化失败 (旧API也失败): {e}")
     
     def load_model(self):
         """加载模型（MediaPipe不需要）"""
@@ -67,7 +130,17 @@ class MediaPipeDetector:
             results: 检测结果
         """
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        return self.detector.process(rgb_frame)
+        if NEW_API:
+            # 新版本API需要转换为MediaPipe Image格式
+            import numpy as np
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+            if self.detection_type == "pose":
+                return self.detector.detect(mp_image)
+            else:
+                return self.detector.detect(mp_image)
+        else:
+            # 旧版本API
+            return self.detector.process(rgb_frame)
     
     def get_classes(self):
         """获取支持的类别"""

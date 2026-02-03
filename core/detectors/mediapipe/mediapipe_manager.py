@@ -6,6 +6,17 @@ import cv2
 import mediapipe as mp
 from .mediapipe_detector import MediaPipeDetector
 
+# 检查MediaPipe版本并导入正确的模块
+try:
+    # 新版本MediaPipe (>= 0.10.0)
+    from mediapipe.tasks import python
+    from mediapipe.tasks.python import vision
+    from mediapipe.tasks.python.vision import PoseLandmarker, FaceLandmarker
+    NEW_API = True
+except ImportError:
+    # 旧版本MediaPipe (< 0.10.0)
+    NEW_API = False
+
 
 class MediaPipeRenderer:
     """MediaPipe统一渲染器"""
@@ -18,11 +29,7 @@ class MediaPipeRenderer:
             show_skeleton: 是否显示骨骼连接
         """
         self.show_skeleton = show_skeleton
-        # 使用新版本的 MediaPipe API
-        self.mp_draw = mp.tasks.vision.drawing_utils
-        self.mp_drawing_styles = mp.tasks.vision.drawing_styles
-        self.mp_pose_connections = mp.tasks.vision.PoseLandmarksConnections
-
+        
         # 颜色配置
         self.pose_landmark_color = (0, 255, 255)  # 黄色关键点
         self.pose_connection_color = (0, 255, 0)  # 绿色连接线
