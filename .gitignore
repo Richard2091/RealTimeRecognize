@@ -33,15 +33,21 @@ ENV/
 *.swo
 *~
 
-# Model files (optional, uncomment if you want to ignore large model files)
-# models/*.pt
-
-# Logs
-*.log
-
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Project specific
-.codebuddy/
+config.json
+config.json.bak
+*.log
+*.tmp
+
+# Model files (optional - uncomment if you don't want to track models)
+# model/
+# *.pt

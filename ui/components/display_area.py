@@ -29,6 +29,7 @@ class DisplayArea:
 
         # 状态标签
         status_label = QLabel("状态: 就绪")
+        status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(status_label)
 
         frame.setLayout(layout)

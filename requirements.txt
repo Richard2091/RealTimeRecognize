@@ -1,9 +1,9 @@
 # YOLO + OpenCV + PyQt5 实时识别项目依赖
 # PyTorch CPU 版本安装源
 --index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-torchaudio
+torch==2.6.0+cpu
+torchvision==2.6.0+cpu
+torchaudio==0.21.0+cpu
 
 # 恢复默认 PyPI 源安装其他包
 --index-url https://pypi.org/simple

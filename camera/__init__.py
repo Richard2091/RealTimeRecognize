@@ -2,18 +2,19 @@
 摄像头模块 - 统一摄像头管理框架
 支持本地摄像头和RTSP网络摄像头
 """
-from .camera_manager import CameraManager, CameraState, CameraEvent
+from .camera_controller import CameraController
 from .camera_factory import CameraFactory
 from .base_camera import BaseCamera
-from .local_camera import LocalCamera
-from .rtsp_camera import RTSPCamera
+from .enum.camera_status import CameraStatus
+from .enum.camera_event import CameraEvent
+from .implementations import LocalCamera, RTSPCamera
 
 __all__ = [
-    'CameraManager',
-    'CameraFactory', 
+    'CameraController',
+    'CameraFactory',
     'BaseCamera',
     'LocalCamera',
     'RTSPCamera',
-    'CameraState',
+    'CameraStatus',
     'CameraEvent'
 ]

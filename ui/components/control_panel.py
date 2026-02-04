@@ -5,7 +5,7 @@
 from PyQt5.QtWidgets import (QFrame, QVBoxLayout, QGroupBox, QLabel,
                              QComboBox, QCheckBox, QPushButton, QHBoxLayout)
 from PyQt5.QtCore import Qt
-from utils.config import Config
+from ui.managers.config_file_manager import config_manager
 
 
 class ControlPanel:
@@ -34,20 +34,22 @@ class ControlPanel:
         panel.setLayout(layout)
         self.panel = panel
         return panel
-    
+
     def create_model_selector(self):
         """创建模型选择器组件"""
         group = QGroupBox("模型选择")
         layout = QVBoxLayout()
-        
+
         # 模型下拉框
         model_combo = QComboBox()
-        for key, model_info in Config.ALL_MODELS.items():
-            model_combo.addItem(model_info['display'], key)
-        
+        config = config_manager.load_config()
+        models = config.get('models', {})
+        for model_name, model_info in models.items():
+            model_combo.addItem(model_info['display'], model_name)
+
         layout.addWidget(model_combo)
         group.setLayout(layout)
-        
+
         self.components['model_combo'] = model_combo
         return group
     

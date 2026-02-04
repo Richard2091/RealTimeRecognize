@@ -4,8 +4,8 @@
 """
 from typing import Dict, Any, Optional, Union
 from .base_camera import BaseCamera
-from .local_camera import LocalCamera
-from .rtsp_camera import RTSPCamera
+from .implementations.local_camera import LocalCamera
+from .implementations.rtsp_camera import RTSPCamera
 
 
 class CameraFactory:
