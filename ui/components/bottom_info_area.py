@@ -2,10 +2,12 @@
 底部信息显示区域组件
 类似IDEA侧栏，按钮在底部，默认只显示按钮高度
 """
+from PyQt5.QtCore import QObject, Qt
 from PyQt5.QtWidgets import (QFrame, QWidget, QVBoxLayout, QHBoxLayout,
-                             QTextEdit, QPushButton, QStackedWidget)
-from PyQt5.QtCore import QObject
-from PyQt5.QtGui import QTextCursor
+                             QPushButton, QStackedWidget)
+
+from .tabs import (VideoTab, PerformanceTab, DetectionTab, 
+                   ResourceTab, RTSPTab, LogTab)
 
 
 class BottomInfoArea(QObject):
@@ -20,6 +22,7 @@ class BottomInfoArea(QObject):
         self.is_expanded = False  # 是否已展开
         self.expanded_height = 200  # 展开时的默认高度
         self.loading_config = False  # 是否正在加载配置（用于避免触发回调）
+        self.panel_names = ['video', 'performance', 'detection', 'resource', 'rtsp', 'log']  # 面板名称列表
 
     def create_bottom_info_area(self):
         """创建底部信息显示区域"""
@@ -39,55 +42,44 @@ class BottomInfoArea(QObject):
         tab_layout.setContentsMargins(5, 0, 0, 0)
         tab_layout.setSpacing(2)
 
-        # 创建"视频信息"标签按钮
-        video_btn = self._create_tab_button("📊 视频信息")
-        video_btn.clicked.connect(lambda: self._on_button_clicked(video_btn, 0))
-        self.video_btn = video_btn
-
-        # 创建"后台日志"标签按钮
-        log_btn = self._create_tab_button("📋 后台日志")
-        log_btn.clicked.connect(lambda: self._on_button_clicked(log_btn, 1))
-        self.log_btn = log_btn
-
-        tab_layout.addWidget(video_btn)
-        tab_layout.addWidget(log_btn)
+        # 创建标签按钮和对应面板
+        self.tab_buttons = {}
+        self.panels = {}
+        
+        # 创建各个标签页实例
+        self.tabs = {
+            'video': VideoTab(),
+            'performance': PerformanceTab(),
+            'detection': DetectionTab(),
+            'resource': ResourceTab(),
+            'rtsp': RTSPTab(),
+            'log': LogTab()
+        }
+        
+        # 创建标签按钮和连接信号
+        for i, (tab_name, tab_instance) in enumerate(self.tabs.items()):
+            # 创建按钮
+            btn = self._create_tab_button(tab_instance.get_button_text())
+            # 修复闭包问题：使用默认参数捕获当前值
+            btn.clicked.connect(lambda checked, btn=btn, idx=i: self._on_button_clicked(btn, idx))
+            self.tab_buttons[tab_name] = btn
+            self.panels[tab_name] = tab_instance
+            
+            # 添加到标签栏
+            tab_layout.addWidget(btn)
+        
         tab_layout.addStretch()
+        
+        # 隐藏RTSP标签（默认隐藏，只有在RTSP模式下才显示）
+        self.tab_buttons['rtsp'].hide()
 
         # 创建内容区域（使用StackedWidget，动态高度）
         stacked_widget = QStackedWidget()
         self.stacked_widget = stacked_widget
 
-        # 创建视频信息面板
-        info_panel = QWidget()
-        info_layout = QVBoxLayout(info_panel)
-        info_layout.setContentsMargins(5, 5, 5, 5)
-
-        info_text = QTextEdit()
-        info_text.setReadOnly(True)
-        info_text.setPlaceholderText("视频信息将在此显示...")
-        # 设置无边框样式
-        info_text.setStyleSheet("QTextEdit { border: none; background-color: #ffffff; }")
-        # 移除最大高度限制，允许自适应扩展
-        info_text.setMinimumHeight(100)
-        info_layout.addWidget(info_text)
-
-        # 创建后台日志面板
-        log_panel = QWidget()
-        log_layout = QVBoxLayout(log_panel)
-        log_layout.setContentsMargins(5, 5, 5, 5)
-
-        log_text = QTextEdit()
-        log_text.setReadOnly(True)
-        log_text.setPlaceholderText("后台日志将在此显示...")
-        # 设置日志样式：等宽字体，无边框
-        log_text.setStyleSheet("QTextEdit { border: none; background-color: #ffffff; font-family: Consolas, Monaco, monospace; font-size: 10pt; }")
-        # 移除最大高度限制，允许自适应扩展
-        log_text.setMinimumHeight(100)
-        log_layout.addWidget(log_text)
-
-        # 添加面板到StackedWidget
-        stacked_widget.addWidget(info_panel)  # index 0
-        stacked_widget.addWidget(log_panel)   # index 1
+        # 将所有面板添加到StackedWidget
+        for tab_instance in self.tabs.values():
+            stacked_widget.addWidget(tab_instance)
 
         # 将内容区域和标签栏添加到主布局（标签栏在底部）
         main_layout.addWidget(stacked_widget)
@@ -97,16 +89,22 @@ class BottomInfoArea(QObject):
         self.components.update({
             'frame': frame,
             'stacked_widget': stacked_widget,
-            'info_text': info_text,
-            'log_text': log_text,
-            'video_btn': video_btn,
-            'log_btn': log_btn
+            'log_text': self.tabs['log'].get_text_edit(),
+            'rtsp_btn': self.tab_buttons['rtsp'],  # 保存RTSP按钮引用，方便控制显示/隐藏
         })
+        
+        # 保存所有面板和按钮
+        for name, panel in self.panels.items():
+            self.components[f'{name}_panel'] = panel
+        for name, btn in self.tab_buttons.items():
+            self.components[f'{name}_btn'] = btn
 
         # 默认隐藏内容区域，只显示标签栏
         stacked_widget.hide()
 
         return frame
+    
+
 
     def _create_tab_button(self, text):
         """创建标签页按钮（横向样式）"""
@@ -233,12 +231,26 @@ class BottomInfoArea(QObject):
         切换到底部信息栏的指定面板
 
         Args:
-            panel_index: 面板索引（0=视频信息，1=后台日志）
+            panel_index: 面板索引（0=视频信息，1=性能指标，2=检测信息，3=资源使用，4=RTSP信息，5=后台日志）
         """
-        if panel_index == 0:
-            self._on_button_clicked(self.video_btn, 0)
-        elif panel_index == 1:
-            self._on_button_clicked(self.log_btn, 1)
+        # 根据索引获取对应的标签名称
+        tab_names = list(self.tabs.keys())
+        if 0 <= panel_index < len(tab_names):
+            tab_name = tab_names[panel_index]
+            btn = self.tab_buttons.get(tab_name)
+            if btn:
+                self._on_button_clicked(btn, panel_index)
+    
+    def set_rtsp_visible(self, visible):
+        """
+        设置RTSP标签是否可见
+        
+        Args:
+            visible: 是否可见
+        """
+        rtsp_btn = self.tab_buttons.get('rtsp')
+        if rtsp_btn:
+            rtsp_btn.setVisible(visible)
 
     def get_component(self, name):
         """获取指定组件"""
@@ -250,12 +262,44 @@ class BottomInfoArea(QObject):
 
     def append_log(self, message):
         """追加日志到日志文本框"""
-        log_text = self.get_component('log_text')
-        if log_text:
-            # 移动光标到末尾
-            cursor = log_text.textCursor()
-            cursor.movePosition(QTextCursor.End)
-            log_text.setTextCursor(cursor)
-            log_text.insertPlainText(message)
-            # 自动滚动到底部
-            log_text.ensureCursorVisible()
+        log_tab = self.tabs.get('log')
+        if log_tab:
+            log_tab.append_log(message)
+
+    def update_video_info(self, info_dict):
+        """
+        更新视频信息面板（分别更新不同的标签）
+
+        Args:
+            info_dict: 包含视频信息的字典
+        """
+        # 1. 更新视频信息标签
+        video_tab = self.tabs.get('video')
+        if video_tab:
+            video_tab.update_content(info_dict)
+
+        # 2. 更新性能指标标签
+        performance_tab = self.tabs.get('performance')
+        if performance_tab:
+            performance_tab.update_content(info_dict)
+
+        # 3. 更新检测信息标签
+        detection_tab = self.tabs.get('detection')
+        if detection_tab:
+            detection_tab.update_content(info_dict)
+
+        # 4. 更新资源使用标签
+        resource_tab = self.tabs.get('resource')
+        if resource_tab:
+            resource_tab.update_content(info_dict)
+
+        # 5. 更新RTSP信息标签（仅RTSP模式下有数据）
+        if 'rtsp_url' in info_dict:
+            rtsp_tab = self.tabs.get('rtsp')
+            if rtsp_tab:
+                rtsp_tab.update_content(info_dict)
+                
+                # 显示RTSP标签
+                rtsp_btn = self.tab_buttons.get('rtsp')
+                if rtsp_btn:
+                    rtsp_btn.show()
