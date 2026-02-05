@@ -17,6 +17,9 @@ class BottomInfoArea(QObject):
         self.components = {}
         self.current_button = None  # 当前选中的按钮
         self.active_panel = None  # 当前展开的面板
+        self.is_expanded = False  # 是否已展开
+        self.expanded_height = 200  # 展开时的默认高度
+        self.loading_config = False  # 是否正在加载配置（用于避免触发回调）
 
     def create_bottom_info_area(self):
         """创建底部信息显示区域"""
@@ -62,9 +65,8 @@ class BottomInfoArea(QObject):
         info_text = QTextEdit()
         info_text.setReadOnly(True)
         info_text.setPlaceholderText("视频信息将在此显示...")
-        # 设置最小和最大高度，允许调整内容高度
+        # 移除最大高度限制，允许自适应扩展
         info_text.setMinimumHeight(100)
-        info_text.setMaximumHeight(500)
         info_layout.addWidget(info_text)
 
         # 创建后台日志面板
@@ -77,18 +79,17 @@ class BottomInfoArea(QObject):
         log_text.setPlaceholderText("后台日志将在此显示...")
         # 设置日志样式：等宽字体
         log_text.setStyleSheet("QTextEdit { font-family: Consolas, Monaco, monospace; font-size: 10pt; }")
-        # 设置最小和最大高度，允许调整内容高度
+        # 移除最大高度限制，允许自适应扩展
         log_text.setMinimumHeight(100)
-        log_text.setMaximumHeight(500)
         log_layout.addWidget(log_text)
 
         # 添加面板到StackedWidget
         stacked_widget.addWidget(info_panel)  # index 0
         stacked_widget.addWidget(log_panel)   # index 1
 
-        # 将标签栏和内容区域添加到主布局
-        main_layout.addWidget(tab_bar)
+        # 将内容区域和标签栏添加到主布局（标签栏在底部）
         main_layout.addWidget(stacked_widget)
+        main_layout.addWidget(tab_bar)
 
         # 保存组件引用
         self.components.update({
@@ -115,7 +116,7 @@ class BottomInfoArea(QObject):
                 background-color: #e0e0e0;
                 color: #333333;
                 border: none;
-                border-bottom: 2px solid transparent;
+                border-top: 2px solid transparent;
                 padding: 5px 15px;
                 font-size: 12px;
             }
@@ -126,7 +127,7 @@ class BottomInfoArea(QObject):
                 background-color: #ffffff;
                 color: #2196F3;
                 font-weight: bold;
-                border-bottom: 2px solid #2196F3;
+                border-top: 2px solid #2196F3;
             }
             QPushButton:!checked {
                 background-color: #e8e8e8;
@@ -142,6 +143,7 @@ class BottomInfoArea(QObject):
             clicked_btn.setChecked(False)
             self.current_button = None
             self.active_panel = None
+            self.is_expanded = False
         else:
             # 切换到新面板
             if self.current_button:
@@ -152,17 +154,18 @@ class BottomInfoArea(QObject):
             self.active_panel = index
             self.stacked_widget.setCurrentIndex(index)
             self.stacked_widget.show()
+            self.is_expanded = True
+            # 如果不是在加载配置，则通知主窗口更新分割器高度
+            if not self.loading_config and hasattr(self, 'on_expand'):
+                self.on_expand()
 
     def collapse_panel(self):
         """收起当前展开的面板"""
         self.stacked_widget.hide()
-        # 通知主窗口更新分割器高度
-        if hasattr(self, 'on_collapse'):
+        self.is_expanded = False
+        # 如果不是在加载配置，则通知主窗口更新分割器高度
+        if not self.loading_config and hasattr(self, 'on_collapse'):
             self.on_collapse()
-
-    def collapse_panel(self):
-        """收起当前展开的面板"""
-        self.stacked_widget.hide()
 
     def get_component(self, name):
         """获取指定组件"""

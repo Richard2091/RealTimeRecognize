@@ -87,7 +87,10 @@ class ConfigFileManager:
             },
             "show_statistics": True,
             "splitter_sizes": [600, 30],
-            "selected_camera_id": 0
+            "selected_camera_id": 0,
+            "bottom_info_expanded": False,
+            "bottom_info_height": 200,
+            "bottom_info_active_panel": 0
         }
 
     def save_config(self, config):

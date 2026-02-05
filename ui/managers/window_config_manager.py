@@ -55,6 +55,28 @@ class WindowConfigManager:
             if hasattr(main_window, 'main_splitter'):
                 main_window.main_splitter.setSizes(splitter_sizes)
 
+            # 应用底部信息栏配置
+            bottom_info_expanded = config_manager.get_config_value(config, 'bottom_info_expanded', False)
+            bottom_info_height = config_manager.get_config_value(config, 'bottom_info_height', 200)
+            bottom_info_active_panel = config_manager.get_config_value(config, 'bottom_info_active_panel', 0)
+
+            if hasattr(main_window, 'bottom_info_area'):
+                # 设置展开状态和高度
+                main_window.bottom_info_area.expanded_height = bottom_info_height
+                main_window.bottom_info_area.is_expanded = bottom_info_expanded
+
+                # 设置当前激活的面板
+                if bottom_info_expanded and bottom_info_active_panel is not None:
+                    # 模拟点击相应的标签按钮
+                    if bottom_info_active_panel == 0:
+                        main_window.bottom_info_area._on_button_clicked(
+                            main_window.bottom_info_area.video_btn, 0
+                        )
+                    elif bottom_info_active_panel == 1:
+                        main_window.bottom_info_area._on_button_clicked(
+                            main_window.bottom_info_area.log_btn, 1
+                        )
+
         except Exception as e:
             print(f"应用配置失败: {e}")
 
@@ -94,6 +116,12 @@ class WindowConfigManager:
             # 保存分割器大小
             if hasattr(main_window, 'main_splitter'):
                 config['splitter_sizes'] = main_window.main_splitter.sizes()
+
+            # 保存底部信息栏状态
+            if hasattr(main_window, 'bottom_info_area'):
+                config['bottom_info_expanded'] = main_window.bottom_info_area.is_expanded
+                config['bottom_info_height'] = main_window.bottom_info_area.expanded_height
+                config['bottom_info_active_panel'] = main_window.bottom_info_area.active_panel
 
             # 保存配置文件
             config_manager.save_config(config)

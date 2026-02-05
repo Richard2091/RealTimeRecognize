@@ -30,6 +30,8 @@ class MainWindow(QMainWindow):
         self.use_emotion = False
         self.use_gesture = False
         self.mirror_mode = False
+        self.tab_bar_height = 30  # 标签栏高度
+        self.splitter_handle_width = 6  # 分割器句柄的原始宽度
 
         # 模块化组件
         self.control_panel = ControlPanel()
@@ -60,7 +62,31 @@ class MainWindow(QMainWindow):
             # 使用 WindowConfigManager 应用配置
             from ui.managers.window_config_manager import WindowConfigManager
             window_config_manager = WindowConfigManager()
+
+            # 设置加载配置标志，避免触发回调
+            self.bottom_info_area.loading_config = True
+
             window_config_manager.apply_to_ui(self.control_panel, self, self.current_config)
+
+            # 恢复加载配置标志
+            self.bottom_info_area.loading_config = False
+
+            # 根据底部信息栏的展开状态调整分割器
+            if self.bottom_info_area.is_expanded:
+                # 展开状态：确保分割器高度足够显示内容，并显示分割线
+                self.main_splitter.setHandleWidth(self.splitter_handle_width)
+                current_sizes = self.main_splitter.sizes()
+                top_height = current_sizes[0]
+                # 如果底部高度小于标签栏+展开高度，则调整
+                if current_sizes[1] < self.bottom_info_area.expanded_height + self.tab_bar_height:
+                    expanded_height = self.bottom_info_area.expanded_height + self.tab_bar_height
+                    self.main_splitter.setSizes([top_height, expanded_height])
+            else:
+                # 收起状态：确保底部高度只有标签栏高度，并隐藏分割线
+                current_sizes = self.main_splitter.sizes()
+                top_height = current_sizes[0]
+                self.main_splitter.setSizes([top_height, self.tab_bar_height])
+                self.main_splitter.setHandleWidth(0)
 
             # 检测并填充可用摄像头列表
             self._detect_and_populate_cameras()
@@ -93,6 +119,32 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"保存配置失败: {e}")
     
+    def _on_bottom_info_collapse(self):
+        """当底部信息区域收起时，调整分割器高度为标签栏高度并隐藏分割线"""
+        current_sizes = self.main_splitter.sizes()
+        top_height = current_sizes[0]
+        self.main_splitter.setSizes([top_height, self.tab_bar_height])
+        # 收起时设置分割线宽度为0，隐藏分割线，用户无法拖动
+        self.main_splitter.setHandleWidth(0)
+
+    def _on_bottom_info_expand(self):
+        """当底部信息区域展开时，调整分割器高度为展开高度并显示分割线"""
+        # 恢复分割线宽度，允许用户拖动
+        self.main_splitter.setHandleWidth(self.splitter_handle_width)
+        current_sizes = self.main_splitter.sizes()
+        top_height = current_sizes[0]
+        expanded_height = self.bottom_info_area.expanded_height + self.tab_bar_height
+        self.main_splitter.setSizes([top_height, expanded_height])
+
+    def _on_splitter_moved(self, pos, index):
+        """当分割器移动时，更新底部信息栏的展开高度"""
+        # 参数 pos 和 index 未使用，但需要保留以匹配信号签名
+        if self.bottom_info_area.is_expanded:
+            current_sizes = self.main_splitter.sizes()
+            bottom_height = current_sizes[1]
+            # 更新展开高度（减去标签栏高度）
+            self.bottom_info_area.expanded_height = bottom_height - self.tab_bar_height
+
     def _init_ui(self):
         """初始化用户界面"""
         # 创建主部件和垂直布局
@@ -128,19 +180,30 @@ class MainWindow(QMainWindow):
         bottom_info_area = self.bottom_info_area.create_bottom_info_area()
         bottom_info_area.setFrameShape(QFrame.NoFrame)
 
+        # 连接底部信息区域的展开/收起信号
+        self.bottom_info_area.on_collapse = self._on_bottom_info_collapse
+        self.bottom_info_area.on_expand = self._on_bottom_info_expand
+
         # 创建垂直分割器
         vertical_splitter = QSplitter(Qt.Vertical)
         vertical_splitter.setChildrenCollapsible(False)
-        vertical_splitter.setHandleWidth(6)
+        vertical_splitter.setHandleWidth(self.splitter_handle_width)
 
         # 添加上部和下部到分割器
         vertical_splitter.addWidget(top_widget)
         vertical_splitter.addWidget(bottom_info_area)
 
+        # 初始状态为收起，隐藏分割线，设置宽度为0
+        vertical_splitter.setHandleWidth(0)
+
+        # 连接分割器移动信号，用于更新底部信息栏的展开高度
+        vertical_splitter.splitterMoved.connect(self._on_splitter_moved)
+
         # 设置分割器的初始比例
         vertical_splitter.setStretchFactor(0, 1)
         vertical_splitter.setStretchFactor(1, 0)
-        vertical_splitter.setSizes([600, 30])
+        # 初始状态：收起，只显示标签栏高度
+        vertical_splitter.setSizes([600, self.tab_bar_height])
 
         # 显示分割线
         vertical_splitter.setStyleSheet("QSplitter::handle { background-color: #E0E0E0; }")
