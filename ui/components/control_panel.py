@@ -114,26 +114,24 @@ class ControlPanel:
         pose_checkbox.setChecked(False)
         layout.addWidget(pose_checkbox)
 
-        # 骨骼显示
-        skeleton_checkbox = QCheckBox("显示骨骼连接")
-        skeleton_checkbox.setChecked(False)
-        skeleton_checkbox.setEnabled(False)
-        layout.addWidget(skeleton_checkbox)
-
         # 表情检测
         emotion_checkbox = QCheckBox("表情检测")
         emotion_checkbox.setChecked(False)
-        emotion_checkbox.setEnabled(False)
         layout.addWidget(emotion_checkbox)
 
+        # 手势识别（包含手部检测）
+        gesture_checkbox = QCheckBox("手势识别")
+        gesture_checkbox.setChecked(False)
+        layout.addWidget(gesture_checkbox)
+
         group.setLayout(layout)
-        
+
         self.components.update({
             'pose_checkbox': pose_checkbox,
-            'skeleton_checkbox': skeleton_checkbox,
-            'emotion_checkbox': emotion_checkbox
+            'emotion_checkbox': emotion_checkbox,
+            'gesture_checkbox': gesture_checkbox
         })
-        
+
         return group
     
     def create_display_settings(self):

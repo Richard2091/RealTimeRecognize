@@ -29,8 +29,8 @@ class SignalManager(QObject):
 
         # 获取组件引用
         pose_checkbox = control_panel.get_component('pose_checkbox')
-        skeleton_checkbox = control_panel.get_component('skeleton_checkbox')
         emotion_checkbox = control_panel.get_component('emotion_checkbox')
+        gesture_checkbox = control_panel.get_component('gesture_checkbox')
         mirror_checkbox = control_panel.get_component('mirror_checkbox')
         start_button = control_panel.get_component('start_button')
         stop_button = control_panel.get_component('stop_button')
@@ -38,8 +38,8 @@ class SignalManager(QObject):
 
         # 连接信号
         pose_checkbox.toggled.connect(self._on_pose_toggled)
-        skeleton_checkbox.toggled.connect(self._on_skeleton_toggled)
         emotion_checkbox.toggled.connect(self._on_emotion_toggled)
+        gesture_checkbox.toggled.connect(self._on_gesture_toggled)
         mirror_checkbox.toggled.connect(self._on_mirror_toggled)
         start_button.clicked.connect(self._start_detection)
         stop_button.clicked.connect(self._stop_detection)
@@ -57,20 +57,14 @@ class SignalManager(QObject):
     def _on_pose_toggled(self, checked):
         """姿态检测切换"""
         self.main_window.use_pose = checked
-        control_panel = self.main_window.control_panel
-        skeleton_checkbox = control_panel.get_component('skeleton_checkbox')
-        emotion_checkbox = control_panel.get_component('emotion_checkbox')
-
-        skeleton_checkbox.setEnabled(checked)
-        emotion_checkbox.setEnabled(checked)
-
-    def _on_skeleton_toggled(self, checked):
-        """骨骼显示切换"""
-        self.main_window.show_skeleton = checked
 
     def _on_emotion_toggled(self, checked):
         """表情检测切换"""
         self.main_window.use_emotion = checked
+
+    def _on_gesture_toggled(self, checked):
+        """手势识别切换"""
+        self.main_window.use_gesture = checked
 
     def _on_mirror_toggled(self, checked):
         """镜像模式切换"""

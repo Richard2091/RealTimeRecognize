@@ -71,7 +71,8 @@ class ConfigFileManager:
             "camera_source": "local",
             "use_pose": False,
             "use_emotion": False,
-            "show_skeleton": False,
+            "use_hand": False,
+            "use_gesture": False,
             "mirror_mode": False,
             "selected_model": "yolov8n",
             "window_geometry": {

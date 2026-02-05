@@ -199,8 +199,6 @@ class CameraManager(QObject):
 
     def _on_camera_opened(self):
         """摄像头已打开回调"""
-        print("✓ 摄像头已打开")
-
         # 更新UI状态
         if hasattr(self.main_window, 'display_area'):
             status_label = self.main_window.display_area.get_component('status_label')
@@ -209,8 +207,6 @@ class CameraManager(QObject):
 
     def _on_camera_closed(self):
         """摄像头已关闭回调"""
-        print("✓ 摄像头已关闭")
-
         # 更新UI状态
         if hasattr(self.main_window, 'display_area'):
             status_label = self.main_window.display_area.get_component('status_label')

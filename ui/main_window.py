@@ -6,6 +6,7 @@ import sys
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                              QSplitter, QFrame)
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 
 from ui.components.control_panel import ControlPanel
 from ui.components.display_area import DisplayArea
@@ -27,8 +28,8 @@ class MainWindow(QMainWindow):
         self.selected_model = None
         self.use_pose = False
         self.use_emotion = False
+        self.use_gesture = False
         self.mirror_mode = False
-        self.show_skeleton = False
 
         # 模块化组件
         self.control_panel = ControlPanel()
@@ -75,8 +76,8 @@ class MainWindow(QMainWindow):
         self.selected_model = config_manager.get_config_value(config, 'selected_model')
         self.use_pose = config_manager.get_config_value(config, 'use_pose', False)
         self.use_emotion = config_manager.get_config_value(config, 'use_emotion', False)
+        self.use_gesture = config_manager.get_config_value(config, 'use_gesture', False)
         self.mirror_mode = config_manager.get_config_value(config, 'mirror_mode', False)
-        self.show_skeleton = config_manager.get_config_value(config, 'show_skeleton', False)
 
         # 保存配置引用
         self.current_config = config
@@ -260,6 +261,8 @@ class MainWindow(QMainWindow):
 def main():
     """主函数"""
     app = QApplication(sys.argv)
+    # 设置应用图标
+    app.setWindowIcon(QIcon('ui/logo.svg'))
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())

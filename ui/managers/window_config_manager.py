@@ -22,13 +22,23 @@ class WindowConfigManager:
             # 应用功能开关
             pose_checkbox = control_panel.get_component('pose_checkbox')
             emotion_checkbox = control_panel.get_component('emotion_checkbox')
-            skeleton_checkbox = control_panel.get_component('skeleton_checkbox')
+            gesture_checkbox = control_panel.get_component('gesture_checkbox')
             mirror_checkbox = control_panel.get_component('mirror_checkbox')
 
-            pose_checkbox.setChecked(config_manager.get_config_value(config, 'use_pose', False))
-            emotion_checkbox.setChecked(config_manager.get_config_value(config, 'use_emotion', False))
-            skeleton_checkbox.setChecked(config_manager.get_config_value(config, 'show_skeleton', False))
-            mirror_checkbox.setChecked(config_manager.get_config_value(config, 'mirror_mode', False))
+            # 获取配置值
+            use_pose = config_manager.get_config_value(config, 'use_pose', False)
+            use_emotion = config_manager.get_config_value(config, 'use_emotion', False)
+            use_gesture = config_manager.get_config_value(config, 'use_gesture', False)
+            mirror_mode = config_manager.get_config_value(config, 'mirror_mode', False)
+
+            # 设置复选框状态
+            pose_checkbox.setChecked(use_pose)
+            emotion_checkbox.setChecked(use_emotion)
+            gesture_checkbox.setChecked(use_gesture)
+            mirror_checkbox.setChecked(mirror_mode)
+
+            # 根据主功能状态设置子功能的启用状态
+            emotion_checkbox.setEnabled(use_pose)
 
             # 应用窗口几何
             geometry = config_manager.get_config_value(config, 'window_geometry', {})
@@ -62,14 +72,14 @@ class WindowConfigManager:
             model_combo = control_panel.get_component('model_combo')
             pose_checkbox = control_panel.get_component('pose_checkbox')
             emotion_checkbox = control_panel.get_component('emotion_checkbox')
-            skeleton_checkbox = control_panel.get_component('skeleton_checkbox')
+            gesture_checkbox = control_panel.get_component('gesture_checkbox')
             mirror_checkbox = control_panel.get_component('mirror_checkbox')
 
             # 更新配置字典
             config['selected_model'] = model_combo.currentData() if model_combo.currentData() else None
             config['use_pose'] = pose_checkbox.isChecked()
             config['use_emotion'] = emotion_checkbox.isChecked()
-            config['show_skeleton'] = skeleton_checkbox.isChecked()
+            config['use_gesture'] = gesture_checkbox.isChecked()
             config['mirror_mode'] = mirror_checkbox.isChecked()
 
             # 保存窗口几何信息

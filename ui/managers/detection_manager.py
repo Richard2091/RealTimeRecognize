@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QObject
 from ui.managers.config_file_manager import config_manager
 from core.detectors.mediapipe.detector import MediaPipeDetector
 from core.detectors.mediapipe.renderer import MediaPipeRenderer
+from utils.logger_suppressor import suppress_stderr_context
 
 
 class DetectionManager(QObject):
@@ -26,6 +27,7 @@ class DetectionManager(QObject):
         self.detector = None
         self.mediapipe_pose_detector = None
         self.mediapipe_emotion_detector = None
+        self.mediapipe_gesture_detector = None
         self.mediapipe_renderer = MediaPipeRenderer()
 
         # 统计信息
@@ -153,18 +155,26 @@ class DetectionManager(QObject):
                     print("❌ MediaPipe未安装，无法使用姿态和表情检测")
                     return False
 
-            # 加载MediaPipe检测器
+            # 加载MediaPipe检测器（抑制 C++ 日志输出）
             if self.main_window.use_pose:
                 print("\n加载MediaPipe检测器")
                 print("-" * 30)
                 print("正在加载MediaPipe姿态检测器...")
-                self.mediapipe_pose_detector = MediaPipeDetector(detection_type="pose")
+                with suppress_stderr_context():
+                    self.mediapipe_pose_detector = MediaPipeDetector(detection_type="pose")
                 print("✓ MediaPipe姿态检测器加载成功")
 
             if self.main_window.use_emotion:
                 print("正在加载MediaPipe表情检测器...")
-                self.mediapipe_emotion_detector = MediaPipeDetector(detection_type="face")
+                with suppress_stderr_context():
+                    self.mediapipe_emotion_detector = MediaPipeDetector(detection_type="face")
                 print("✓ MediaPipe表情检测器加载成功")
+
+            if hasattr(self.main_window, 'use_gesture') and self.main_window.use_gesture:
+                print("正在加载MediaPipe手势识别器...")
+                with suppress_stderr_context():
+                    self.mediapipe_gesture_detector = MediaPipeDetector(detection_type="gesture")
+                print("✓ MediaPipe手势识别器加载成功（包含手部检测功能）")
 
             return True
 
@@ -184,6 +194,10 @@ class DetectionManager(QObject):
             processed_frame = frame.copy()
             results = []
 
+            # 镜像处理
+            if self.main_window.mirror_mode:
+                processed_frame = cv2.flip(processed_frame, 1)
+
             # YOLO目标检测
             if self.detector:
                 try:
@@ -197,13 +211,17 @@ class DetectionManager(QObject):
                 except Exception as e:
                     print(f"YOLO检测失败: {e}")
 
-            # MediaPipe姿态和表情检测
+            # MediaPipe姿态检测
             if self.main_window.use_pose and results:
-                self._process_pose_and_emotion(processed_frame, results)
+                self._process_pose_detection(processed_frame, results)
 
-            # 镜像处理
-            if self.main_window.mirror_mode:
-                processed_frame = cv2.flip(processed_frame, 1)
+            # MediaPipe表情检测
+            if self.main_window.use_emotion and results:
+                self._process_emotion_detection(processed_frame, results)
+
+            # MediaPipe手势识别（包含手部检测和渲染）
+            if hasattr(self.main_window, 'use_gesture') and self.main_window.use_gesture:
+                self._process_gesture_recognition(processed_frame)
 
             # 更新统计信息
             self._update_statistics()
@@ -272,10 +290,8 @@ RTSP地址: {stats['rtsp_url']}
             if info_text:
                 info_text.setText(stats_text)
 
-    def _process_pose_and_emotion(self, frame, results):
-        """处理姿态和表情检测"""
-        self.mediapipe_renderer.set_skeleton_visibility(self.main_window.show_skeleton)
-
+    def _process_pose_detection(self, frame, results):
+        """处理姿态检测"""
         for result in results:
             if result.boxes is not None:
                 boxes = result.boxes
@@ -297,46 +313,74 @@ RTSP地址: {stats['rtsp_url']}
                         person_img = frame[y1_crop:y2_crop, x1_crop:x2_crop]
 
                         if person_img.size > 0:
+                            bbox = (x1_crop, y1_crop, x2_crop, y2_crop)
+
                             # 姿态检测
                             if self.mediapipe_pose_detector:
                                 pose_results = self.mediapipe_pose_detector.detect_pose(person_img)
 
                                 # 渲染姿态
-                                bbox = (x1_crop, y1_crop, x2_crop, y2_crop)
                                 self.mediapipe_renderer.render_pose(frame, pose_results, bbox)
 
-                            # 表情检测
-                            if self.main_window.use_emotion:
-                                self._process_emotion_detection(
-                                    frame, pose_results, bbox
-                                )
-
-    def _process_emotion_detection(self, frame, pose_results, bbox):
+    def _process_emotion_detection(self, frame, results):
         """处理表情检测"""
-        # 基于鼻子位置检测表情
-        if self.mediapipe_emotion_detector and pose_results and pose_results.pose_landmarks:
-            landmarks = pose_results.pose_landmarks.landmark
-            if len(landmarks) > 0:
-                nose = landmarks[0]
-                if nose.visibility > 0.5:
-                    # 计算在原图中的绝对坐标
-                    x1_crop, y1_crop, x2_crop, y2_crop = bbox
-                    nose_x = int((nose.x * (x2_crop - x1_crop)) + x1_crop)
-                    nose_y = int((nose.y * (y2_crop - y1_crop)) + y1_crop)
+        for result in results:
+            if result.boxes is not None:
+                boxes = result.boxes
+                for idx, box in enumerate(boxes):
+                    # 只对类别为"人"（class_id=0）的目标进行表情检测
+                    if int(box.cls[0]) == 0:
+                        # 获取检测框
+                        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+                        x1, y1 = max(0, x1), max(0, y1)
+                        x2, y2 = min(frame.shape[1], x2), min(frame.shape[0], y2)
 
-                    face_size = 80
-                    x1_face = int(max(0, nose_x - face_size))
-                    y1_face = int(max(0, nose_y - face_size))
-                    x2_face = int(min(frame.shape[1], nose_x + face_size))
-                    y2_face = int(min(frame.shape[0], nose_y + face_size * 1.2))
+                        # 裁剪人体区域
+                        margin = 50
+                        x1_crop = max(0, x1 - margin)
+                        y1_crop = max(0, y1 - margin)
+                        x2_crop = min(frame.shape[1], x2 + margin)
+                        y2_crop = min(frame.shape[0], y2 + margin)
 
-                    emotion = self.mediapipe_emotion_detector.detect_emotion(
-                        frame, (x1_face, y1_face, x2_face, y2_face)
-                    )
+                        person_img = frame[y1_crop:y2_crop, x1_crop:x2_crop]
 
-                    self.mediapipe_renderer.render_emotion(
-                        frame, emotion, (x1_face, y1_face, x2_face, y2_face)
-                    )
+                        if person_img.size > 0:
+                            bbox = (x1_crop, y1_crop, x2_crop, y2_crop)
+
+                            # 表情检测（使用独立的表情检测器）
+                            if self.mediapipe_emotion_detector:
+                                emotion_results = self.mediapipe_emotion_detector.detect(person_img)
+
+                                # 渲染表情
+                                if emotion_results.face_landmarks:
+                                    # 计算面部边界框
+                                    landmarks = emotion_results.face_landmarks[0]
+                                    xs = [lm.x * (x2_crop - x1_crop) + x1_crop for lm in landmarks]
+                                    ys = [lm.y * (y2_crop - y1_crop) + y1_crop for lm in landmarks]
+                                    face_bbox = (int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys)))
+
+                                    # 分析表情
+                                    emotion = self.mediapipe_emotion_detector._analyze_emotion(landmarks)
+
+                                    # 渲染表情
+                                    self.mediapipe_renderer.render_emotion(frame, emotion, face_bbox)
+
+    def _process_gesture_recognition(self, frame):
+        """
+        处理手势识别
+        根据官方文档，GestureRecognizer 返回包含 hand_landmarks 和 gestures 的完整结果
+        参考: https://github.com/google-ai-edge/mediapipe-samples/blob/main/examples/gesture_recognizer/python/gesture_recognizer.ipynb
+        """
+        if self.mediapipe_gesture_detector:
+            try:
+                # 使用 recognize_gesture 方法，返回完整的结果对象（包含手势、手部关键点、手部类型）
+                gesture_results = self.mediapipe_gesture_detector.recognize_gesture(frame)
+
+                # 渲染手势识别结果（包括手部关键点和连接线）
+                if gesture_results and gesture_results.hand_landmarks:
+                    self.mediapipe_renderer.render_gesture(frame, gesture_results)
+            except Exception as e:
+                print(f"手势识别失败: {e}")
 
     def get_camera_config(self) -> dict:
         """获取摄像头配置"""
