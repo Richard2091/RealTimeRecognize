@@ -107,59 +107,53 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(5)
 
-        # 创建统一的边框容器
-        border_container = QFrame()
-        border_container.setFrameShape(QFrame.StyledPanel)
-        border_layout = QVBoxLayout(border_container)
-        border_layout.setContentsMargins(0, 0, 0, 0)
-        border_layout.setSpacing(0)
-
-        # 上部区域：水平布局（左侧控制面板 + 右侧显示区域）
-        top_widget = QWidget()
-        top_layout = QHBoxLayout(top_widget)
-        top_layout.setContentsMargins(0, 0, 0, 0)
-        top_layout.setSpacing(5)
+        # 创建上部水平分割器（左侧控制面板 + 右侧显示区域）
+        horizontal_splitter = QSplitter(Qt.Horizontal)
+        horizontal_splitter.setChildrenCollapsible(False)
+        horizontal_splitter.setHandleWidth(6)
+        horizontal_splitter.setStyleSheet("QSplitter::handle { background-color: #E0E0E0; }")
 
         # 左侧控制面板
         control_panel = self.control_panel.create_panel()
         control_panel.setFrameShape(QFrame.NoFrame)
-        top_layout.addWidget(control_panel, 1)
 
         # 右侧显示区域
         display_area = self.display_area.create_display_area()
         display_area.setFrameShape(QFrame.NoFrame)
-        top_layout.addWidget(display_area, 3)
 
         # 底部信息区域
         bottom_info_area = self.bottom_info_area.create_bottom_info_area()
         bottom_info_area.setFrameShape(QFrame.NoFrame)
 
-        # 创建垂直分割器
+        # 将控制面板和显示区域添加到水平分割器
+        horizontal_splitter.addWidget(control_panel)
+        horizontal_splitter.addWidget(display_area)
+
+        # 设置水平分割器的比例（1:3）
+        horizontal_splitter.setStretchFactor(0, 1)
+        horizontal_splitter.setStretchFactor(1, 3)
+
+        # 创建垂直分割器（上部区域 + 底部信息栏）
         vertical_splitter = QSplitter(Qt.Vertical)
         vertical_splitter.setChildrenCollapsible(False)
         vertical_splitter.setHandleWidth(self.splitter_handle_width)
+        vertical_splitter.setStyleSheet("QSplitter::handle { background-color: #E0E0E0; }")
 
-        # 添加上部和下部到分割器
-        vertical_splitter.addWidget(top_widget)
+        # 将水平分割器和底部信息栏添加到垂直分割器
+        vertical_splitter.addWidget(horizontal_splitter)
         vertical_splitter.addWidget(bottom_info_area)
 
         # 初始状态为收起，隐藏分割线，设置宽度为0
         vertical_splitter.setHandleWidth(0)
 
-        # 设置分割器的初始比例
+        # 设置垂直分割器的初始比例
         vertical_splitter.setStretchFactor(0, 1)
         vertical_splitter.setStretchFactor(1, 0)
         # 初始状态：收起，只显示标签栏高度
         vertical_splitter.setSizes([600, self.tab_bar_height])
 
-        # 显示分割线
-        vertical_splitter.setStyleSheet("QSplitter::handle { background-color: #E0E0E0; }")
-
-        # 将垂直分割器添加到边框容器
-        border_layout.addWidget(vertical_splitter)
-
-        # 将边框容器添加到主布局
-        main_layout.addWidget(border_container, 1)
+        # 将垂直分割器添加到主布局
+        main_layout.addWidget(vertical_splitter, 1)
 
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)

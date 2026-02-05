@@ -2,7 +2,7 @@
 显示区域组件
 只包含视频显示区域和状态标签
 """
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel, QSizePolicy
 from PyQt5.QtCore import Qt
 
 
@@ -16,21 +16,26 @@ class DisplayArea:
     def create_display_area(self):
         """创建显示区域"""
         frame = QFrame()
-        frame.setFrameShape(QFrame.StyledPanel)
+        frame.setFrameShape(QFrame.NoFrame)  # 无边框
         layout = QVBoxLayout()
-
-        # 视频显示标签
-        video_label = QLabel("等待启动...")
-        video_label.setAlignment(Qt.AlignCenter)
-        # 移除最小高度限制，允许底部信息区域展开到任意高度
-        # 只设置最小宽度，不设置最小高度
-        video_label.setMinimumWidth(800)
-        layout.addWidget(video_label, 1)  # 使用stretch=1让视频区域占据主要空间
+        layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
 
         # 状态标签
         status_label = QLabel("状态: 就绪")
         status_label.setAlignment(Qt.AlignCenter)
+        status_size_policy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        status_label.setSizePolicy(status_size_policy)
         layout.addWidget(status_label)
+
+        # 视频显示标签
+        video_label = QLabel("等待启动...")
+        video_label.setAlignment(Qt.AlignCenter)
+        # 设置尺寸策略：可扩展且可以缩小
+        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        video_label.setSizePolicy(size_policy)
+        # 设置最小尺寸，允许在需要时缩小
+        video_label.setMinimumSize(400, 300)
+        layout.addWidget(video_label, 1)  # 使用stretch=1让视频区域占据主要空间
 
         frame.setLayout(layout)
         self.frame = frame
