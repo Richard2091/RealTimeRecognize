@@ -22,6 +22,7 @@ class SignalManager(QObject):
         """连接所有信号"""
         self._connect_control_signals()
         self._connect_camera_signals()
+        self._connect_bottom_info_signals()
 
     def _connect_control_signals(self):
         """连接控制面板信号"""
@@ -90,3 +91,45 @@ class SignalManager(QObject):
     def _stop_detection(self):
         """停止检测"""
         self.main_window.detection_manager.stop_detection()
+
+    def _on_bottom_info_collapse(self):
+        """当底部信息区域收起时，调整分割器高度为标签栏高度并隐藏分割线"""
+        bottom_info_area = self.main_window.bottom_info_area
+        current_sizes = self.main_window.main_splitter.sizes()
+        top_height = current_sizes[0]
+        self.main_window.main_splitter.setSizes([top_height, self.main_window.tab_bar_height])
+        # 收起时设置分割线宽度为0，隐藏分割线，用户无法拖动
+        self.main_window.main_splitter.setHandleWidth(0)
+
+    def _on_bottom_info_expand(self):
+        """当底部信息区域展开时，调整分割器高度为展开高度并显示分割线"""
+        bottom_info_area = self.main_window.bottom_info_area
+        # 恢复分割线宽度，允许用户拖动
+        self.main_window.main_splitter.setHandleWidth(self.main_window.splitter_handle_width)
+        current_sizes = self.main_window.main_splitter.sizes()
+        top_height = current_sizes[0]
+        expanded_height = bottom_info_area.expanded_height + self.main_window.tab_bar_height
+        self.main_window.main_splitter.setSizes([top_height, expanded_height])
+
+    def _on_splitter_moved(self, pos, index):
+        """当分割器移动时，更新底部信息栏的展开高度"""
+        # 参数 pos 和 index 未使用，但需要保留以匹配信号签名
+        bottom_info_area = self.main_window.bottom_info_area
+        if bottom_info_area.is_expanded:
+            current_sizes = self.main_window.main_splitter.sizes()
+            bottom_height = current_sizes[1]
+            # 更新展开高度（减去标签栏高度）
+            bottom_info_area.expanded_height = bottom_height - self.main_window.tab_bar_height
+
+    def _connect_bottom_info_signals(self):
+        """连接底部信息栏相关信号"""
+        # 获取底部信息栏和分割器
+        bottom_info_area = self.main_window.bottom_info_area
+        main_splitter = self.main_window.main_splitter
+
+        # 连接分割器移动信号
+        main_splitter.splitterMoved.connect(self._on_splitter_moved)
+
+        # 连接底部信息栏的展开/收起信号
+        bottom_info_area.on_collapse = self._on_bottom_info_collapse
+        bottom_info_area.on_expand = self._on_bottom_info_expand

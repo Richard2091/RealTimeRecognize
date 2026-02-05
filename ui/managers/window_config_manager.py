@@ -64,15 +64,7 @@ class WindowConfigManager:
 
                 # 设置当前激活的面板
                 if bottom_info_expanded and bottom_info_active_panel is not None:
-                    # 模拟点击相应的标签按钮
-                    if bottom_info_active_panel == 0:
-                        main_window.bottom_info_area._on_button_clicked(
-                            main_window.bottom_info_area.video_btn, 0
-                        )
-                    elif bottom_info_active_panel == 1:
-                        main_window.bottom_info_area._on_button_clicked(
-                            main_window.bottom_info_area.log_btn, 1
-                        )
+                    main_window.bottom_info_area.switch_panel(bottom_info_active_panel)
 
         except Exception as e:
             print(f"应用配置失败: {e}")

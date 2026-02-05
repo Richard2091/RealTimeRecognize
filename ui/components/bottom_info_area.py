@@ -4,7 +4,7 @@
 """
 from PyQt5.QtWidgets import (QFrame, QWidget, QVBoxLayout, QHBoxLayout,
                              QTextEdit, QPushButton, QStackedWidget)
-from PyQt5.QtCore import QObject, Qt, pyqtSignal
+from PyQt5.QtCore import QObject
 from PyQt5.QtGui import QTextCursor
 
 
@@ -168,6 +168,77 @@ class BottomInfoArea(QObject):
         # 如果不是在加载配置，则通知主窗口更新分割器高度
         if not self.loading_config and hasattr(self, 'on_collapse'):
             self.on_collapse()
+
+    def get_splitter_height(self, tab_bar_height, expanded=False):
+        """
+        获取分割器高度
+
+        Args:
+            tab_bar_height: 标签栏高度
+            expanded: 是否展开状态
+
+        Returns:
+            int: 分割器高度
+        """
+        if expanded:
+            return self.expanded_height + tab_bar_height
+        else:
+            return tab_bar_height
+
+    def update_expanded_height(self, current_height, tab_bar_height):
+        """
+        更新展开高度
+
+        Args:
+            current_height: 当前分割器高度
+            tab_bar_height: 标签栏高度
+        """
+        if self.is_expanded:
+            self.expanded_height = current_height - tab_bar_height
+
+    def apply_config_to_splitter(self, splitter, tab_bar_height):
+        """
+        应用配置到分割器
+
+        Args:
+            splitter: 分割器对象
+            tab_bar_height: 标签栏高度
+        """
+        # 设置加载配置标志，避免触发回调
+        self.loading_config = True
+
+        # 根据展开状态调整分割器
+        if self.is_expanded:
+            # 展开状态：确保分割器高度足够显示内容，并显示分割线
+            splitter.setHandleWidth(6)
+            current_sizes = splitter.sizes()
+            top_height = current_sizes[0]
+            total_height = top_height + current_sizes[1]
+            # 如果底部高度小于标签栏+展开高度，则调整
+            if current_sizes[1] < self.expanded_height + tab_bar_height:
+                expanded_height = self.expanded_height + tab_bar_height
+                splitter.setSizes([top_height, expanded_height])
+        else:
+            # 收起状态：确保底部高度只有标签栏高度，并隐藏分割线
+            current_sizes = splitter.sizes()
+            top_height = current_sizes[0]
+            splitter.setSizes([top_height, tab_bar_height])
+            splitter.setHandleWidth(0)
+
+        # 恢复加载配置标志
+        self.loading_config = False
+
+    def switch_panel(self, panel_index):
+        """
+        切换到底部信息栏的指定面板
+
+        Args:
+            panel_index: 面板索引（0=视频信息，1=后台日志）
+        """
+        if panel_index == 0:
+            self._on_button_clicked(self.video_btn, 0)
+        elif panel_index == 1:
+            self._on_button_clicked(self.log_btn, 1)
 
     def get_component(self, name):
         """获取指定组件"""
