@@ -86,6 +86,10 @@ class DetectionManager(QObject):
 
         # 6. 更新UI状态
         self.main_window.update_detection_ui(True)
+        
+        # 7. 立即更新标签页信息
+        self._update_statistics()
+        
         print("=" * 50)
         print("✓ 检测已启动")
         print("=" * 50)
@@ -284,76 +288,92 @@ class DetectionManager(QObject):
 
     def _update_statistics(self, performance_data=None):
         """更新统计信息"""
+        # 获取摄像头统计信息
+        stats = self.main_window.camera_manager.get_statistics()
+        
+        # 立即更新初始信息，然后按间隔更新
+        if self.stats_update_counter == 0:
+            # 首次更新：立即显示基本信息
+            self._update_info_dict(stats, performance_data, is_initial=True)
+        
         self.stats_update_counter += 1
         if self.stats_update_counter >= self.stats_update_interval:
             self.stats_update_counter = 0
+            # 使用最新的摄像头统计信息更新
+            self._update_info_dict(stats, performance_data)
 
-            stats = self.main_window.camera_manager.get_statistics()
-            if not stats:
-                # 即使没有摄像头统计信息，也更新基本信息
-                stats = {}
+    def _update_info_dict(self, stats, performance_data=None, is_initial=False):
+        """构建并更新信息字典"""
+        if not stats:
+            # 即使没有摄像头统计信息，也更新基本信息
+            stats = {}
 
-            # 构建视频信息字典
-            info_dict = {
-                # 视频流信息（使用 get 方法提供默认值）
-                'resolution': f"{stats.get('resolution', ['N/A', 'N/A'])[0]}x{stats.get('resolution', ['N/A', 'N/A'])[1]}" if stats.get('resolution') else 'N/A',
-                'fps': f"{stats.get('real_time_fps', 0):.1f} / {stats.get('avg_fps', 0):.1f}" if stats.get('real_time_fps') else 'N/A',
-                'frame_count': f"{stats.get('frame_count', 0):,}" if stats.get('frame_count') else '0',
-                'running_time': f"{stats.get('running_time', 0):.1f} 秒" if stats.get('running_time') else 'N/A',
-                'error_rate': f"{stats.get('error_rate', 0):.2f}" if stats.get('error_rate') else '0.00',
+        # 构建视频信息字典
+        info_dict = {
+            # 视频流信息（使用 get 方法提供默认值）
+            'resolution': f"{stats.get('resolution', ['N/A', 'N/A'])[0]}x{stats.get('resolution', ['N/A', 'N/A'])[1]}" if stats.get('resolution') else 'N/A',
+            'fps': f"{stats.get('real_time_fps', 0):.1f} / {stats.get('avg_fps', 0):.1f}" if stats.get('real_time_fps') else 'N/A',
+            'frame_count': f"{stats.get('frame_count', 0):,}" if stats.get('frame_count') else '0',
+            'running_time': f"{stats.get('running_time', 0):.1f} 秒" if stats.get('running_time') else 'N/A',
+            'error_rate': f"{stats.get('error_rate', 0):.2f}" if stats.get('error_rate') else '0.00',
 
-                # 性能数据（如果有）
-                'processing_delay': f"{performance_data.get('total_processing_time', 0):.1f}" if performance_data else "N/A",
-                'detection_time': f"{performance_data.get('detection_time', 0):.1f}" if performance_data else "N/A",
-                'render_time': "N/A",  # 渲染时间可以后续添加
-                'total_time': f"{performance_data.get('total_processing_time', 0):.1f}" if performance_data else "N/A",
-                'throughput': f"{1000/max(performance_data.get('total_processing_time', 1), 1):.1f}" if performance_data else "N/A",
+            # 性能数据（如果有）
+            'processing_delay': f"{performance_data.get('total_processing_time', 0):.1f}" if performance_data else "N/A",
+            'detection_time': f"{performance_data.get('detection_time', 0):.1f}" if performance_data else "N/A",
+            'render_time': "N/A",  # 渲染时间可以后续添加
+            'total_time': f"{performance_data.get('total_processing_time', 0):.1f}" if performance_data else "N/A",
+            'throughput': f"{1000/max(performance_data.get('total_processing_time', 1), 1):.1f}" if performance_data else "N/A",
 
-                # 检测信息
-                'model_name': self.main_window.selected_model or 'N/A',
-                'detection_objects': 'N/A',  # 可以在检测时统计
-                'confidence': 'N/A',  # 可以在检测时计算平均置信度
-                'pose_enabled': '是' if self.main_window.use_pose else '否',
-                'emotion_enabled': '是' if self.main_window.use_emotion else '否',
-                'gesture_enabled': '是' if getattr(self.main_window, 'use_gesture', False) else '否',
+            # 检测信息
+            'model_name': self.main_window.selected_model or 'N/A',
+            'detection_objects': 'N/A',  # 可以在检测时统计
+            'confidence': 'N/A',  # 可以在检测时计算平均置信度
+            'pose_enabled': '是' if self.main_window.use_pose else '否',
+            'emotion_enabled': '是' if self.main_window.use_emotion else '否',
+            'gesture_enabled': '是' if getattr(self.main_window, 'use_gesture', False) else '否',
 
-                # 资源使用
-                'memory_usage': f"{psutil.Process().memory_info().rss / 1024 / 1024:.1f}",
-                'cpu_usage': f"{psutil.cpu_percent(interval=0.1):.1f}",
-                'gpu_usage': 'N/A',  # 需要额外的库来获取GPU使用率
-            }
+            # 资源使用
+            'memory_usage': f"{psutil.Process().memory_info().rss / 1024 / 1024:.1f}",
+            'cpu_usage': f"{psutil.cpu_percent(interval=0.1):.1f}",
+            'gpu_usage': 'N/A',  # 需要额外的库来获取GPU使用率
+        }
 
-            # 添加检测器性能细分（如果有）
-            if performance_data:
-                detection_breakdown = []
-                if performance_data.get('detection_time', 0) > 0:
-                    detection_breakdown.append(f"目标检测: {performance_data['detection_time']:.1f}ms")
-                if performance_data.get('pose_time', 0) > 0:
-                    detection_breakdown.append(f"姿态检测: {performance_data['pose_time']:.1f}ms")
-                if performance_data.get('emotion_time', 0) > 0:
-                    detection_breakdown.append(f"表情检测: {performance_data['emotion_time']:.1f}ms")
-                if performance_data.get('gesture_time', 0) > 0:
-                    detection_breakdown.append(f"手势检测: {performance_data['gesture_time']:.1f}ms")
+        # 如果是首次更新，添加初始化状态信息
+        if is_initial:
+            info_dict['status'] = '检测已启动'
+            info_dict['initial_info'] = '系统正在初始化，请稍候...'
 
-                if detection_breakdown:
-                    info_dict['detection_breakdown'] = ' | '.join(detection_breakdown)
+        # 添加检测器性能细分（如果有）
+        if performance_data:
+            detection_breakdown = []
+            if performance_data.get('detection_time', 0) > 0:
+                detection_breakdown.append(f"目标检测: {performance_data['detection_time']:.1f}ms")
+            if performance_data.get('pose_time', 0) > 0:
+                detection_breakdown.append(f"姿态检测: {performance_data['pose_time']:.1f}ms")
+            if performance_data.get('emotion_time', 0) > 0:
+                detection_breakdown.append(f"表情检测: {performance_data['emotion_time']:.1f}ms")
+            if performance_data.get('gesture_time', 0) > 0:
+                detection_breakdown.append(f"手势检测: {performance_data['gesture_time']:.1f}ms")
 
-            # 添加RTSP特有信息
-            if 'rtsp_url' in stats:
-                info_dict.update({
-                    'rtsp_url': stats['rtsp_url'],
-                    'connection_stability': f"{stats['connection_stability']}%",
-                    'data_rate_mbps': f"{stats['data_rate_mbps']}",
-                    'reconnection_count': f"{stats['reconnection_count']}"
-                })
-                # 显示RTSP标签
-                self.main_window.bottom_info_area.set_rtsp_visible(True)
-            else:
-                # 隐藏RTSP标签
-                self.main_window.bottom_info_area.set_rtsp_visible(False)
+            if detection_breakdown:
+                info_dict['detection_breakdown'] = ' | '.join(detection_breakdown)
 
-            # 更新UI显示
-            self.main_window.bottom_info_area.update_video_info(info_dict)
+        # 添加RTSP特有信息
+        if 'rtsp_url' in stats:
+            info_dict.update({
+                'rtsp_url': stats['rtsp_url'],
+                'connection_stability': f"{stats['connection_stability']}%",
+                'data_rate_mbps': f"{stats['data_rate_mbps']}",
+                'reconnection_count': f"{stats['reconnection_count']}"
+            })
+            # 显示RTSP标签
+            self.main_window.bottom_info_area.set_rtsp_visible(True)
+        else:
+            # 隐藏RTSP标签
+            self.main_window.bottom_info_area.set_rtsp_visible(False)
+
+        # 更新UI显示
+        self.main_window.bottom_info_area.update_video_info(info_dict)
 
     def _process_pose_detection(self, frame, results):
         """处理姿态检测"""

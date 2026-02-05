@@ -2,7 +2,7 @@
 后台日志标签
 """
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextCursor
+from PyQt5.QtGui import QTextCursor, QTextBlockFormat
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTextEdit
 
 
@@ -13,7 +13,7 @@ class LogTab(QWidget):
         super().__init__()
         self.tab_name = "后台日志"
         self.icon = "📋"
-        self.placeholder_text = "后台日志将在此显示..."
+        self.placeholder_text = "等待后台日志..."
         
         self._setup_ui()
         
@@ -41,7 +41,6 @@ class LogTab(QWidget):
                 background-color: #ffffff;
                 font-size: 12px;
                 padding: 10px;
-                line-height: 1.4;
             }
             QTextEdit:focus {
                 border: none;
@@ -64,6 +63,12 @@ class LogTab(QWidget):
             # 移动光标到末尾
             cursor = self.text_edit.textCursor()
             cursor.movePosition(QTextCursor.End)
+            
+            # 设置段落格式以增加行距
+            block_format = QTextBlockFormat()
+            block_format.setLineHeight(20, QTextBlockFormat.FixedHeight)
+            cursor.setBlockFormat(block_format)
+            
             self.text_edit.setTextCursor(cursor)
             self.text_edit.insertPlainText(message)
             # 自动滚动到底部
