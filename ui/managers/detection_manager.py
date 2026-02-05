@@ -247,8 +247,9 @@ class DetectionManager(QObject):
 
         # 缩放以适应标签
         video_label = self.main_window.display_area.get_component('video_label')
+        from PyQt5.QtCore import QSize
         scaled_pixmap = pixmap.scaled(
-            video_label.size(),
+            QSize(video_label.size()),
             Qt.KeepAspectRatio,
             Qt.SmoothTransformation
         )
