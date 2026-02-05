@@ -37,9 +37,6 @@ class WindowConfigManager:
             gesture_checkbox.setChecked(use_gesture)
             mirror_checkbox.setChecked(mirror_mode)
 
-            # 根据主功能状态设置子功能的启用状态
-            emotion_checkbox.setEnabled(use_pose)
-
             # 应用窗口几何
             geometry = config_manager.get_config_value(config, 'window_geometry', {})
             if geometry:
