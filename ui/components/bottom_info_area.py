@@ -65,6 +65,8 @@ class BottomInfoArea(QObject):
         info_text = QTextEdit()
         info_text.setReadOnly(True)
         info_text.setPlaceholderText("视频信息将在此显示...")
+        # 设置无边框样式
+        info_text.setStyleSheet("QTextEdit { border: none; background-color: #ffffff; }")
         # 移除最大高度限制，允许自适应扩展
         info_text.setMinimumHeight(100)
         info_layout.addWidget(info_text)
@@ -77,8 +79,8 @@ class BottomInfoArea(QObject):
         log_text = QTextEdit()
         log_text.setReadOnly(True)
         log_text.setPlaceholderText("后台日志将在此显示...")
-        # 设置日志样式：等宽字体
-        log_text.setStyleSheet("QTextEdit { font-family: Consolas, Monaco, monospace; font-size: 10pt; }")
+        # 设置日志样式：等宽字体，无边框
+        log_text.setStyleSheet("QTextEdit { border: none; background-color: #ffffff; font-family: Consolas, Monaco, monospace; font-size: 10pt; }")
         # 移除最大高度限制，允许自适应扩展
         log_text.setMinimumHeight(100)
         log_layout.addWidget(log_text)
